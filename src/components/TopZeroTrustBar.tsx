@@ -8,8 +8,15 @@ import {
   Layers,
   Settings2,
   Trash2,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 import type { DetectionToggles } from '../utils/sanitizerEngine';
+
+export interface ImportStatus {
+  kind: 'success' | 'error';
+  message: string;
+}
 
 interface TopZeroTrustBarProps {
   onLoadSample: () => void;
@@ -21,6 +28,7 @@ interface TopZeroTrustBarProps {
   activeStage: 'STAGE_1_SANITIZE' | 'STAGE_2_REHYDRATE';
   onChangeStage: (stage: 'STAGE_1_SANITIZE' | 'STAGE_2_REHYDRATE') => void;
   vaultSize: number;
+  importStatus: ImportStatus | null;
 }
 
 export const TopZeroTrustBar: React.FC<TopZeroTrustBarProps> = ({
@@ -33,6 +41,7 @@ export const TopZeroTrustBar: React.FC<TopZeroTrustBarProps> = ({
   activeStage,
   onChangeStage,
   vaultSize,
+  importStatus,
 }) => {
   const [showConfigMenu, setShowConfigMenu] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -41,6 +50,8 @@ export const TopZeroTrustBar: React.FC<TopZeroTrustBarProps> = ({
     if (e.target.files && e.target.files[0]) {
       onImportVault(e.target.files[0]);
     }
+    // Reset file input value so selecting the same file again triggers onChange
+    e.target.value = '';
   };
 
   return (
@@ -115,6 +126,25 @@ export const TopZeroTrustBar: React.FC<TopZeroTrustBarProps> = ({
 
       {/* Action Controls & Utilities */}
       <div className="flex items-center gap-2">
+        {/* Inline Import/Export Status Feedback */}
+        {importStatus && (
+          <div
+            className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono border max-w-xs truncate transition-all ${
+              importStatus.kind === 'success'
+                ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800/80'
+                : 'bg-rose-950/60 text-rose-300 border-rose-800/80'
+            }`}
+            title={importStatus.message}
+          >
+            {importStatus.kind === 'success' ? (
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+            ) : (
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-400" />
+            )}
+            <span className="truncate">{importStatus.message}</span>
+          </div>
+        )}
+
         {/* Load Sample Button */}
         <button
           onClick={onLoadSample}
@@ -122,8 +152,8 @@ export const TopZeroTrustBar: React.FC<TopZeroTrustBarProps> = ({
           title="Load realistic stack trace with API keys, client email, IBAN, and company name"
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          <span className="hidden md:inline">Load Sample Sensitive Payload</span>
-          <span className="md:hidden">Sample</span>
+          <span className="hidden lg:inline">Load Sample Sensitive Payload</span>
+          <span className="lg:hidden">Sample</span>
         </button>
 
         {/* Export / Import Vault */}
@@ -134,7 +164,7 @@ export const TopZeroTrustBar: React.FC<TopZeroTrustBarProps> = ({
           title="Save active token mapping dictionary to a local .json file"
         >
           <Download className="w-3.5 h-3.5 text-zinc-400" />
-          <span className="hidden lg:inline">Export Vault</span>
+          <span className="hidden xl:inline">Export Vault</span>
         </button>
 
         <button
@@ -143,7 +173,7 @@ export const TopZeroTrustBar: React.FC<TopZeroTrustBarProps> = ({
           title="Import previously saved Vault JSON to re-hydrate responses anytime"
         >
           <Upload className="w-3.5 h-3.5 text-zinc-400" />
-          <span className="hidden lg:inline">Import Vault</span>
+          <span className="hidden xl:inline">Import Vault</span>
         </button>
 
         {/* Category Filter Dropdown Toggle */}

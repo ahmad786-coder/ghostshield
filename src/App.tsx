@@ -10,9 +10,13 @@ import {
 } from './utils/sanitizerEngine';
 import { extractTextFromPdf, sanitizeCsvFile } from './utils/fileParsers';
 import {
+  validateVaultExport,
+  MAX_VAULT_FILE_BYTES,
+} from './utils/vaultValidation';
+import {
   SAMPLE_SENSITIVE_PAYLOAD,
 } from './utils/sampleData';
-import { TopZeroTrustBar } from './components/TopZeroTrustBar';
+import { TopZeroTrustBar, type ImportStatus } from './components/TopZeroTrustBar';
 import { SanitizeStage } from './components/SanitizeStage';
 import { RehydrateStage } from './components/RehydrateStage';
 import { VaultSidebar } from './components/VaultSidebar';
@@ -32,6 +36,10 @@ export function App() {
   const [whitelistTokens, setWhitelistTokens] = useState<string[]>([]);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
 
+  // Vault Import State & Inline Status
+  const [importedVaultMap, setImportedVaultMap] = useState<Record<string, string> | null>(null);
+  const [importStatus, setImportStatus] = useState<ImportStatus | null>(null);
+
   // Compute live sanitization result
   const sanitizationResult = useMemo(() => {
     return sanitizeText(rawInput, {
@@ -41,6 +49,18 @@ export function App() {
     });
   }, [rawInput, toggles, customEntities, whitelistTokens]);
 
+  // Precedence rule: RehydrateStage receives the imported vault ONLY when the live vault
+  // is empty; when the live vault is non-empty the live vault wins (the import is for later sessions, not for overriding a live session).
+  const liveVaultSize = Object.keys(sanitizationResult.vaultMap).length;
+  const activeRehydrateVaultMap = useMemo<Record<string, string>>(() => {
+    if (liveVaultSize > 0) {
+      return sanitizationResult.vaultMap;
+    }
+    return importedVaultMap || {};
+  }, [liveVaultSize, sanitizationResult.vaultMap, importedVaultMap]);
+
+  const isUsingImportedVault = liveVaultSize === 0 && importedVaultMap !== null;
+
   // Load Built-in Realistic Sample
   const handleLoadSample = () => {
     setRawInput(SAMPLE_SENSITIVE_PAYLOAD);
@@ -48,10 +68,12 @@ export function App() {
     setActiveStage('STAGE_1_SANITIZE');
   };
 
-  // Clear Session
+  // Clear Session: resets inputs, whitelists, imported vault, and import status
   const handleClearSession = () => {
     setRawInput('');
     setWhitelistTokens([]);
+    setImportedVaultMap(null);
+    setImportStatus(null);
   };
 
   // Toggle Detection Category
@@ -112,22 +134,57 @@ export function App() {
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+
+    setImportStatus({
+      kind: 'success',
+      message: 'Vault exported — this file contains your original secrets in plaintext. Keep it safe.',
+    });
   };
 
-  // Import Vault from JSON
+  // Import Vault from JSON with strict validation & size checking
   const handleImportVault = async (file: File) => {
+    setImportStatus(null);
+
+    // (a) File size check without reading
+    if (file.size > MAX_VAULT_FILE_BYTES) {
+      setImportStatus({
+        kind: 'error',
+        message: `Vault file exceeds 5MB size limit (${(file.size / (1024 * 1024)).toFixed(1)}MB)`,
+      });
+      return;
+    }
+
+    // (b) Read text and parse JSON
+    let parsed: unknown;
     try {
       const text = await file.text();
-      const parsed: VaultExport = JSON.parse(text);
-      if (parsed.vaultMap) {
-        alert(`Successfully imported Vault with ${Object.keys(parsed.vaultMap).length} tokens!`);
-        // Switch to stage 2 to immediately re-hydrate
-        setActiveStage('STAGE_2_REHYDRATE');
-      }
-    } catch (err) {
-      console.error('Failed to import vault JSON', err);
-      alert('Invalid GhostShield vault JSON file.');
+      parsed = JSON.parse(text);
+    } catch {
+      setImportStatus({
+        kind: 'error',
+        message: 'Invalid JSON file: parsing failed',
+      });
+      return;
     }
+
+    // (c) Pure validation
+    const validation = validateVaultExport(parsed);
+    if (!validation.ok) {
+      setImportStatus({
+        kind: 'error',
+        message: validation.error,
+      });
+      return;
+    }
+
+    // (d) On success: store imported vault and switch to Stage 2
+    const tokenCount = Object.keys(validation.vault.vaultMap).length;
+    setImportedVaultMap(validation.vault.vaultMap);
+    setActiveStage('STAGE_2_REHYDRATE');
+    setImportStatus({
+      kind: 'success',
+      message: `Vault imported (${tokenCount} tokens ready for Stage 2)`,
+    });
   };
 
   // File Upload Handler (TXT, MD, JSON, LOG, CSV, ENV, PDF)
@@ -171,7 +228,8 @@ export function App() {
         onToggleCategory={handleToggleCategory}
         activeStage={activeStage}
         onChangeStage={setActiveStage}
-        vaultSize={Object.keys(sanitizationResult.vaultMap).length}
+        vaultSize={Object.keys(activeRehydrateVaultMap).length}
+        importStatus={importStatus}
       />
 
       {/* Main 2-Stage Split Workbench */}
@@ -191,7 +249,8 @@ export function App() {
             />
           ) : (
             <RehydrateStage
-              vaultMap={sanitizationResult.vaultMap}
+              vaultMap={activeRehydrateVaultMap}
+              isImportedVault={isUsingImportedVault}
               onLoadSampleAiResponse={() => {
                 // If rawInput was empty, load the sample so vaultMap has matching tokens
                 if (!rawInput) {

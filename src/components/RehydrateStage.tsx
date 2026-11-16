@@ -11,11 +11,13 @@ import { rehydrateText } from '../utils/sanitizerEngine';
 
 interface RehydrateStageProps {
   vaultMap: Record<string, string>;
+  isImportedVault?: boolean;
   onLoadSampleAiResponse: () => void;
 }
 
 export const RehydrateStage: React.FC<RehydrateStageProps> = ({
   vaultMap,
+  isImportedVault = false,
   onLoadSampleAiResponse,
 }) => {
   const [aiResponseInput, setAiResponseInput] = useState('');
@@ -69,7 +71,6 @@ export const RehydrateStage: React.FC<RehydrateStageProps> = ({
             <button
               onClick={() => {
                 onLoadSampleAiResponse();
-                // Handled in parent
               }}
               className="flex items-center gap-1.5 text-xs text-zinc-300 hover:text-white px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 transition-colors cursor-pointer"
               title="Load sample AI completion containing [API_KEY_1], [EMAIL_1], etc."
@@ -93,7 +94,12 @@ export const RehydrateStage: React.FC<RehydrateStageProps> = ({
 
         {/* Informational Guidance */}
         <div className="p-3 border-t border-[#27272A] bg-[#0E0E11] text-[11px] text-zinc-400 flex items-center justify-between">
-          <span>Active Vault Map has {Object.keys(vaultMap).length} tokens available for replacement.</span>
+          <span>
+            Active Vault Map has {Object.keys(vaultMap).length} tokens available for replacement.
+            <span className="ml-1 text-zinc-500 font-mono">
+              · {isImportedVault ? 'Imported vault' : 'Live session vault'}
+            </span>
+          </span>
           <span className="font-mono text-zinc-500">Case & Markdown Tolerant</span>
         </div>
       </div>
