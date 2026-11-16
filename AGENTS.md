@@ -29,3 +29,7 @@ GhostShield is a 100% client-side, zero-backend web utility that sanitizes sensi
 ## Architecture Decision Records (ADRs)
 - **2026-11-16 — Deletion of Orphaned ContextForge Module:**
   The ContextForge prompt-packer and file-tree explorer module was permanently removed on 2026-11-16 because it was an orphaned artifact from earlier scaffolding that was never imported by the live GhostShield app and maintained in a separate repository. Do not re-suggest or re-add the context packer codebase without an explicit product decision.
+- **2026-11-16 — Sanitizer Seam Split (`detectEntities` + `assignTokens`):**
+  Split `sanitizeText` into two testable and decoupled exported functions (`detectEntities` for non-overlapping span extraction with fresh regex clones, and `assignTokens` for deterministic vault mapping and string reconstitution) while preserving the composite `sanitizeText` signature.
+- **2026-11-16 — Golden Corpus Regression Guard:**
+  The golden-corpus regression test in `sanitizerEngine.test.ts` must stay green on every refactor; any intentional detection behavior change must be explicitly vetted through the golden corpus first.

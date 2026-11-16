@@ -46,7 +46,7 @@ export const DEFAULT_DETECTION_TOGGLES: DetectionToggles = {
   maskCustom: true,
 };
 
-interface RegexDetectorDef {
+export interface RegexDetectorDef {
   id: string;
   name: string;
   category: EntityCategory;
@@ -224,29 +224,32 @@ export const REGEX_DETECTORS: RegexDetectorDef[] = [
   },
 ];
 
-interface SanitizeOptions {
+export interface DetectOptions {
   toggles?: Partial<DetectionToggles>;
   customEntities?: CustomEntityDefinition[];
-  whitelistTokens?: string[]; // IDs or original values the user explicitly whitelisted
+}
+
+export interface RawEntitySpan {
+  start: number;
+  end: number;
+  originalText: string;
+  prefix: string;
+  category: EntityCategory;
+  severity: SecretSeverity;
+  ruleName: string;
+  ruleId: string;
 }
 
 /**
- * Sanitizes input text, preserving token consistency and building the bidirectional VaultMap.
+ * Seam 1: Detect all matching entities in the text and return non-overlapping spans sorted by position.
+ * Clones each regex per call to guarantee thread/call safety and prevent shared mutable state.
  */
-export function sanitizeText(
+export function detectEntities(
   inputText: string,
-  options: SanitizeOptions = {}
-): SanitizationResult {
-  const startTime = performance.now();
+  options: DetectOptions = {}
+): RawEntitySpan[] {
   if (!inputText || inputText.trim() === '') {
-    return {
-      sanitizedText: '',
-      tokensFoundCount: 0,
-      entities: [],
-      vaultMap: {},
-      reverseVaultMap: {},
-      executionTimeMs: 0,
-    };
+    return [];
   }
 
   const toggles: DetectionToggles = {
@@ -255,18 +258,7 @@ export function sanitizeText(
   };
 
   const customEntities = options.customEntities || [];
-  const whitelist = new Set(options.whitelistTokens || []);
-
-  const rawMatches: Array<{
-    start: number;
-    end: number;
-    originalText: string;
-    prefix: string;
-    category: EntityCategory;
-    severity: SecretSeverity;
-    ruleName: string;
-    ruleId: string;
-  }> = [];
+  const rawMatches: RawEntitySpan[] = [];
 
   // 1. Scan for custom entities first
   if (toggles.maskCustom && customEntities.length > 0) {
@@ -303,11 +295,11 @@ export function sanitizeText(
     }
     if (detector.category === 'NETWORK_PII' && !toggles.maskNetworkPii) continue;
 
-    // Reset regex index
-    detector.regex.lastIndex = 0;
+    // Fresh regex instance per call to eliminate mutable shared state across runs
+    const regexClone = new RegExp(detector.regex.source, detector.regex.flags);
     let m: RegExpExecArray | null;
 
-    while ((m = detector.regex.exec(inputText)) !== null) {
+    while ((m = regexClone.exec(inputText)) !== null) {
       const matchText = m[0];
       if (detector.validator && !detector.validator(matchText)) {
         continue;
@@ -333,7 +325,7 @@ export function sanitizeText(
     return (b.end - b.start) - (a.end - a.start);
   });
 
-  const nonOverlapping: typeof rawMatches = [];
+  const nonOverlapping: RawEntitySpan[] = [];
   let lastEnd = 0;
 
   for (const match of rawMatches) {
@@ -343,8 +335,42 @@ export function sanitizeText(
     }
   }
 
-  // 4. Deterministic Token Assignment & Counter Tracking
-  // Track assigned tokens per unique original value (case-insensitive for emails/domains, exact for keys)
+  return nonOverlapping;
+}
+
+export interface AssignOptions {
+  whitelistTokens?: string[]; // IDs or original values the user explicitly whitelisted
+}
+
+export interface TokenAssignmentResult {
+  sanitizedText: string;
+  tokensFoundCount: number;
+  entities: DetectedEntity[];
+  vaultMap: Record<string, string>;
+  reverseVaultMap: Record<string, string>;
+}
+
+/**
+ * Seam 2: Assign deterministic indexed tokens to non-overlapping spans,
+ * apply whitelisting, build the sanitized output text, and populate the bidirectional vault.
+ */
+export function assignTokens(
+  inputText: string,
+  spans: RawEntitySpan[],
+  options: AssignOptions = {}
+): TokenAssignmentResult {
+  if (!inputText || spans.length === 0) {
+    return {
+      sanitizedText: inputText || '',
+      tokensFoundCount: 0,
+      entities: [],
+      vaultMap: {},
+      reverseVaultMap: {},
+    };
+  }
+
+  const whitelist = new Set(options.whitelistTokens || []);
+
   const originalToTokenMap = new Map<string, string>();
   const tokenToOriginalMap = new Map<string, string>();
   const prefixCounters = new Map<string, number>();
@@ -371,7 +397,7 @@ export function sanitizeText(
 
   const finalizedSpans: MatchedSpan[] = [];
 
-  for (const match of nonOverlapping) {
+  for (const match of spans) {
     const normKey = getNormKey(match.originalText, match.prefix);
 
     // If whitelisted by user, do not replace
@@ -416,7 +442,7 @@ export function sanitizeText(
     });
   }
 
-  // 5. Build Sanitized Output String
+  // Build Sanitized Output String
   let sanitizedOutput = '';
   let cursor = 0;
 
@@ -448,14 +474,56 @@ export function sanitizeText(
     reverseVaultMap[orig] = token;
   }
 
-  const executionTimeMs = performance.now() - startTime;
-
   return {
     sanitizedText: sanitizedOutput,
     tokensFoundCount: finalizedSpans.length,
     entities,
     vaultMap,
     reverseVaultMap,
+  };
+}
+
+export interface SanitizeOptions {
+  toggles?: Partial<DetectionToggles>;
+  customEntities?: CustomEntityDefinition[];
+  whitelistTokens?: string[];
+}
+
+/**
+ * Sanitizes input text, preserving token consistency and building the bidirectional VaultMap.
+ * Composes detectEntities and assignTokens seamlessly.
+ */
+export function sanitizeText(
+  inputText: string,
+  options: SanitizeOptions = {}
+): SanitizationResult {
+  const startTime = performance.now();
+  if (!inputText || inputText.trim() === '') {
+    return {
+      sanitizedText: '',
+      tokensFoundCount: 0,
+      entities: [],
+      vaultMap: {},
+      reverseVaultMap: {},
+      executionTimeMs: 0,
+    };
+  }
+
+  // 1. Detect spans
+  const spans = detectEntities(inputText, {
+    toggles: options.toggles,
+    customEntities: options.customEntities,
+  });
+
+  // 2. Assign tokens and build vault
+  const assigned = assignTokens(inputText, spans, {
+    whitelistTokens: options.whitelistTokens,
+  });
+
+  const executionTimeMs = performance.now() - startTime;
+
+  return {
+    ...assigned,
     executionTimeMs,
   };
 }
