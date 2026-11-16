@@ -22,7 +22,7 @@ describe('File Parsers (CSV & PDF)', () => {
     expect(result.sanitizedCsvString).not.toContain('sk_test_51MzQ4kL2p9wR4tY6uI3oE8dC9vB2n8fK');
   });
 
-  it('extractTextFromPdf: extracts text from minimal PDF buffer or records environment behavior', async () => {
+  it('extractTextFromPdf: rejects with fake-worker error under Vitest Node (browser path unaffected)', async () => {
     // Valid standard PDF 1.4 minimal stream
     const minimalPdf =
       '%PDF-1.4\n' +
@@ -35,14 +35,8 @@ describe('File Parsers (CSV & PDF)', () => {
 
     const buffer = new TextEncoder().encode(minimalPdf).buffer;
 
-    try {
-      const extracted = await extractTextFromPdf(buffer);
-      expect(extracted).toContain('Hello GhostShield PDF');
-    } catch (err: any) {
-      // Vitest runs in Node.js where DOM canvas, OffscreenCanvas, or standard web worker is absent
-      // Document the exact error as required by specification
-      expect(err).toBeDefined();
-      expect(typeof err.message).toBe('string');
-    }
+    // pdfjs needs a real browser worker; under Vitest Node the fake worker cannot resolve,
+    // so the test pins the environment behaviour instead of pretending extraction ran.
+    await expect(extractTextFromPdf(buffer)).rejects.toThrow('Setting up fake worker failed');
   });
 });

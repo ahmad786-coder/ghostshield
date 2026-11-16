@@ -25,6 +25,7 @@ GhostShield is a 100% client-side, zero-backend web utility that sanitizes sensi
 - **Input Validation & Testing:** Every new detection pattern, entity rule, or input path must include deterministic mapping verification and test coverage in `src/utils/__tests__/sanitizerEngine.test.ts`.
 - **Pre-flight Quality Gates:** Always run `npm run lint`, `npm test`, and `npm run build` cleanly before concluding any task.
 - **Small, Reviewable Changes:** Commit changes with clear, descriptive messages and preserve project focus.
+- **Report Every File Touched:** Report every file you touch — including refactors and config edits made along the way, even when they look trivial; an undisclosed change is a defect even when its result is correct.
 
 ## Architecture Decision Records (ADRs)
 - **2026-11-16 — Deletion of Orphaned ContextForge Module:**
