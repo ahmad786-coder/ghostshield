@@ -35,3 +35,5 @@ GhostShield is a 100% client-side, zero-backend web utility that sanitizes sensi
   The golden-corpus regression test in `sanitizerEngine.test.ts` must stay green on every refactor; any intentional detection behavior change must be explicitly vetted through the golden corpus first.
 - **2026-11-16 — Vault Import Contract & Wire-up:**
   Added pure schema validation (`vaultValidation.ts`) enforcing version '1.0', max 5MB file cap, max 10,000 entries, token pattern validation (`^\[[A-Z0-9_]+_\d+\]$`), and non-empty string values. Replaced intrusive `alert()` dialogues with non-blocking inline status pills. Wired `importedVaultMap` into `RehydrateStage` under the explicit precedence rule that imported vaults serve re-hydration when the live session vault is empty.
+- **2026-11-16 — PDF.js Lazy-Loading (Bundle Diet):**
+  Dynamic import of `pdfjs-dist` and its web worker URL inside `extractTextFromPdf` on first user PDF interaction. Main JS bundle shrank from 736.18 kB (223.70 kB gzip) down to 294.35 kB (91.20 kB gzip), saving 441.83 kB and completely eliminating the Vite 500 kB chunk-size warning.

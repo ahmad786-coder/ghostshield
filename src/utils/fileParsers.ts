@@ -1,18 +1,19 @@
-import * as pdfjsLib from 'pdfjs-dist';
-import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import Papa from 'papaparse';
 import { sanitizeText, type DetectionToggles } from './sanitizerEngine';
 import type { CustomEntityDefinition, SanitizationResult } from '../types/ghostshield';
 
-// Safely configure pdf.js web worker for local Vite runtime
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
-}
-
 /**
- * Extracts plain text locally from a PDF ArrayBuffer or File
+ * Extracts plain text locally from a PDF ArrayBuffer or File.
+ * Dynamically loads pdfjs-dist and its worker URL only when a PDF is provided.
  */
 export async function extractTextFromPdf(fileOrBuffer: File | ArrayBuffer): Promise<string> {
+  const [pdfjsLib, { default: workerUrl }] = await Promise.all([
+    import('pdfjs-dist'),
+    import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
+  ]);
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+
   const arrayBuffer =
     fileOrBuffer instanceof File ? await fileOrBuffer.arrayBuffer() : fileOrBuffer;
 
@@ -50,27 +51,16 @@ export async function sanitizeCsvFile(
   sanitizedCsvString: string;
   sanitizationResult: SanitizationResult;
 }> {
-  return new Promise((resolve, reject) => {
-    Papa.parse<string[]>(file, {
-      skipEmptyLines: false,
-      complete: (results) => {
-        try {
-          const rows = results.data;
-          // Flatten all cells with row & column markers, or serialize to text
-          const serializedRaw = Papa.unparse(rows);
-
-          // Run through GhostShield sanitizer engine
-          const sanitizedResult = sanitizeText(serializedRaw, options);
-
-          resolve({
-            sanitizedCsvString: sanitizedResult.sanitizedText,
-            sanitizationResult: sanitizedResult,
-          });
-        } catch (err) {
-          reject(err);
-        }
-      },
-      error: (err) => reject(err),
-    });
+  const text = await file.text();
+  const parsed = Papa.parse<string[]>(text, {
+    skipEmptyLines: false,
   });
+
+  const serializedRaw = Papa.unparse(parsed.data);
+  const sanitizedResult = sanitizeText(serializedRaw, options);
+
+  return {
+    sanitizedCsvString: sanitizedResult.sanitizedText,
+    sanitizationResult: sanitizedResult,
+  };
 }
