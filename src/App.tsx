@@ -233,7 +233,7 @@ export function App() {
       />
 
       {/* Main 2-Stage Split Workbench */}
-      <div className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex overflow-hidden">
         {/* Stage Content */}
         <div className="flex-1 flex flex-col h-full overflow-hidden">
           {activeStage === 'STAGE_1_SANITIZE' ? (
@@ -268,7 +268,7 @@ export function App() {
           onToggleWhitelist={handleToggleWhitelist}
           vaultMap={sanitizationResult.vaultMap}
         />
-      </div>
+      </main>
     </div>
   );
 }

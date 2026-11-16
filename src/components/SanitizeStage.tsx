@@ -80,7 +80,7 @@ export const SanitizeStage: React.FC<SanitizeStageProps> = ({
     const text = sanitizationResult.sanitizedText;
     if (!text) {
       return (
-        <span className="text-zinc-600 font-mono text-xs">
+        <span className="text-zinc-400 font-mono text-xs">
           Anonymized output with reversible tokens will render here in real-time...
         </span>
       );
@@ -156,7 +156,7 @@ export const SanitizeStage: React.FC<SanitizeStageProps> = ({
             value={rawInput}
             onChange={(e) => onRawInputChange(e.target.value)}
             placeholder="Paste raw error traces, contracts, code containing API keys, database credentials, emails, customer records, or financial data..."
-            className="w-full flex-1 p-3.5 bg-[#0D0D10] text-[#FAFAFA] font-mono text-xs leading-relaxed rounded-lg border border-[#27272A] focus:outline-none focus:border-zinc-500 resize-none placeholder-zinc-600"
+            className="w-full flex-1 p-3.5 bg-[#0D0D10] text-[#FAFAFA] font-mono text-xs leading-relaxed rounded-lg border border-[#27272A] focus:outline-none focus:border-zinc-500 resize-none placeholder-zinc-400"
             spellCheck={false}
           />
 
@@ -189,13 +189,14 @@ export const SanitizeStage: React.FC<SanitizeStageProps> = ({
               value={newEntityText}
               onChange={(e) => setNewEntityText(e.target.value)}
               placeholder="e.g. Acme Corp, Shazir, Project Titan"
-              className="flex-1 px-2.5 py-1 text-xs bg-[#18181B] border border-[#27272A] rounded-md text-[#FAFAFA] placeholder-zinc-600 focus:outline-none focus:border-emerald-500/60 font-mono"
+              className="flex-1 px-2.5 py-1 text-xs bg-[#18181B] border border-[#27272A] rounded-md text-[#FAFAFA] placeholder-zinc-400 focus:outline-none focus:border-emerald-500/60 font-mono"
             />
 
             <select
               value={newEntityLabel}
               onChange={(e) => setNewEntityLabel(e.target.value as any)}
               className="px-2 py-1 text-xs bg-[#18181B] border border-[#27272A] rounded-md text-zinc-300 font-mono focus:outline-none cursor-pointer"
+              aria-label="Custom entity category label"
             >
               <option value="COMPANY">COMPANY</option>
               <option value="PERSON">PERSON</option>
@@ -225,6 +226,7 @@ export const SanitizeStage: React.FC<SanitizeStageProps> = ({
                   type="button"
                   onClick={() => onRemoveCustomEntity(ce.id)}
                   className="text-zinc-500 hover:text-rose-400 ml-1 cursor-pointer"
+                  aria-label={`Remove custom entity ${ce.text}`}
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>

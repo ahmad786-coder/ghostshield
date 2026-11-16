@@ -87,7 +87,7 @@ export const RehydrateStage: React.FC<RehydrateStageProps> = ({
             value={aiResponseInput}
             onChange={(e) => setAiResponseInput(e.target.value)}
             placeholder="Paste the completion or answer received from ChatGPT / Claude / Gemini here (e.g., text containing [COMPANY_1], [EMAIL_1], [API_KEY_1])..."
-            className="w-full flex-1 p-3.5 bg-[#0D0D10] text-[#FAFAFA] font-mono text-xs leading-relaxed rounded-lg border border-[#27272A] focus:outline-none focus:border-amber-500/60 resize-none placeholder-zinc-600"
+            className="w-full flex-1 p-3.5 bg-[#0D0D10] text-[#FAFAFA] font-mono text-xs leading-relaxed rounded-lg border border-[#27272A] focus:outline-none focus:border-amber-500/60 resize-none placeholder-zinc-400"
             spellCheck={false}
           />
         </div>
@@ -157,7 +157,7 @@ export const RehydrateStage: React.FC<RehydrateStageProps> = ({
             {restoredText ? (
               restoredText
             ) : (
-              <span className="text-zinc-600 font-mono text-xs">
+              <span className="text-zinc-400 font-mono text-xs">
                 Restored text with all original credentials and client details returned to their exact locations will appear here...
               </span>
             )}

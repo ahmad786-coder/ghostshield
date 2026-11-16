@@ -179,6 +179,7 @@ export const TopZeroTrustBar: React.FC<TopZeroTrustBarProps> = ({
         {/* Category Filter Dropdown Toggle */}
         <div className="relative">
           <button
+            type="button"
             onClick={() => setShowConfigMenu(!showConfigMenu)}
             className={`p-1.5 rounded-lg border text-xs cursor-pointer transition-colors ${
               showConfigMenu
@@ -186,6 +187,7 @@ export const TopZeroTrustBar: React.FC<TopZeroTrustBarProps> = ({
                 : 'bg-[#18181B] text-zinc-300 border-[#27272A] hover:bg-zinc-800'
             }`}
             title="Configure active detection categories"
+            aria-label="Configure active detection categories"
           >
             <Settings2 className="w-4 h-4" />
           </button>
@@ -251,9 +253,11 @@ export const TopZeroTrustBar: React.FC<TopZeroTrustBarProps> = ({
 
         {/* Clear Session */}
         <button
+          type="button"
           onClick={onClearSession}
           className="p-1.5 rounded-lg bg-[#18181B] text-zinc-400 hover:text-rose-400 border border-[#27272A] hover:border-rose-900/60 transition-colors cursor-pointer"
           title="Clear all text and reset vault"
+          aria-label="Clear all text and reset vault"
         >
           <Trash2 className="w-4 h-4" />
         </button>

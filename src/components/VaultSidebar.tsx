@@ -161,9 +161,9 @@ export const VaultSidebar: React.FC<VaultSidebarProps> = ({
       <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
         {filteredEntities.length === 0 ? (
           <div className="text-center py-12 px-4">
-            <Filter className="w-6 h-6 text-zinc-600 mx-auto mb-2" />
+            <Filter className="w-6 h-6 text-zinc-500 mx-auto mb-2" />
             <p className="text-xs text-zinc-400 font-medium">No items in this category</p>
-            <p className="text-[11px] text-zinc-600 mt-0.5">
+            <p className="text-[11px] text-zinc-400 mt-0.5">
               Paste or type sensitive content to generate tokens
             </p>
           </div>
@@ -218,9 +218,11 @@ export const VaultSidebar: React.FC<VaultSidebarProps> = ({
                   </div>
 
                   <button
+                    type="button"
                     onClick={() => toggleReveal(entity.token)}
                     className="text-zinc-400 hover:text-white p-1 rounded transition-colors cursor-pointer"
                     title={isRevealed ? 'Hide secret' : 'Reveal original value'}
+                    aria-label={isRevealed ? `Hide secret for ${entity.token}` : `Reveal original value for ${entity.token}`}
                   >
                     {isRevealed ? (
                       <EyeOff className="w-3.5 h-3.5 text-zinc-300" />
