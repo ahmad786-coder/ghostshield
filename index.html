@@ -6,10 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="GhostShield — a 100% local, reversible PII and secret anonymizer for AI. Your data never leaves your browser." />
     <title>GhostShield — 100% Local Reversible PII & Secret Anonymizer for AI</title>
-    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <!-- Google Fonts: Inter & JetBrains Mono (Loaded Asynchronously to Prevent Render Blocking) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+    </noscript>
   </head>
   <body class="bg-[#09090B] text-[#FAFAFA] font-sans antialiased overflow-hidden selection:bg-[#3B82F6]/30 selection:text-white">
     <div id="root"></div>
