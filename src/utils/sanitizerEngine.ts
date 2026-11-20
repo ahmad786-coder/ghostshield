@@ -59,20 +59,20 @@ export interface RegexDetectorDef {
 export const REGEX_DETECTORS: RegexDetectorDef[] = [
   // 1. Critical Secrets & Keys
   {
-    id: 'openai_key',
-    name: 'OpenAI API Key',
-    category: 'SECRET',
-    prefix: 'OPENAI_KEY',
-    severity: 'CRITICAL',
-    regex: /\b(sk-(?:proj-|live-)?[a-zA-Z0-9_-]{20,80})\b/g,
-  },
-  {
     id: 'anthropic_key',
     name: 'Anthropic API Key',
     category: 'SECRET',
     prefix: 'ANTHROPIC_KEY',
     severity: 'CRITICAL',
     regex: /\b(sk-ant-[a-zA-Z0-9_\-\.]{20,100})\b/g,
+  },
+  {
+    id: 'openai_key',
+    name: 'OpenAI API Key',
+    category: 'SECRET',
+    prefix: 'OPENAI_KEY',
+    severity: 'CRITICAL',
+    regex: /\b(sk-(?:proj-|live-)?[a-zA-Z0-9_-]{20,80})\b/g,
   },
   {
     id: 'google_api_key',

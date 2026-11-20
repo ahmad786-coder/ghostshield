@@ -27,7 +27,7 @@ Tenant: [COMPANY_1] (Client Codename: [PROJECT_1])
 ================= ENVIRONMENT & CREDENTIALS =================
 AWS_ACCESS_KEY_ID=[AWS_ACCESS_KEY_1]
 OPENAI_API_KEY=[OPENAI_KEY_1]
-ANTHROPIC_KEY=[OPENAI_KEY_2]
+ANTHROPIC_KEY=[ANTHROPIC_KEY_1]
 DATABASE_URL=[DB_URI_1]
 MONGODB_URI=[DB_URI_2]
 STRIPE_LIVE_KEY=[STRIPE_KEY_1]
@@ -58,7 +58,7 @@ Customer Rep Confirmation:
       '[PROJECT_1]',
       '[AWS_ACCESS_KEY_1]',
       '[OPENAI_KEY_1]',
-      '[OPENAI_KEY_2]',
+      '[ANTHROPIC_KEY_1]',
       '[DB_URI_1]',
       '[DB_URI_2]',
       '[STRIPE_KEY_1]',
